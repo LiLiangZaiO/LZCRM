@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lzl.saleservice.mapper.OrdersMapper">
+
+    <update id="deleteOrderById">
+        update orders set status = 1 where id =#{orderId}
+    </update>
+    <select id="getPerformanceByMonth" resultType="java.util.Map">
+        SELECT count(*) as totalCustomer ,COALESCE(SUM(price),0) as totalPrice from orders where manager_id =#{userId} AND
+                                                                                     MONTH(create_time) = MONTH(CURRENT_DATE())
+                                                                                 AND YEAR(create_time) = YEAR(CURRENT_DATE())
+    </select>
+</mapper>

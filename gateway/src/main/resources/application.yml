@@ -1,0 +1,37 @@
+server:
+  port: 10010
+spring:
+  application:
+    name: com.lzl.gateway
+  cloud:
+    nacos:
+      server-addr: localhost:8848 # nacos地址
+    gateway:
+      globalcors: # 全局的跨域处理
+        add-to-simple-url-handler-mapping: true # 解决options请求被拦截问题
+        corsConfigurations:
+          '[/**]':
+            allowedOrigins: # 允许哪些网站的跨域请求
+              - "http://localhost:9528"
+            allowedMethods: # 允许的跨域ajax的请求方式
+              - "GET"
+              - "POST"
+              - "DELETE"
+              - "PUT"
+              - "OPTIONS"
+            allowedHeaders: "*" # 允许在请求中携带的头信息
+            allowCredentials: true # 是否允许携带cookie
+            maxAge: 360000 # 这次跨域检测的有效期
+      routes:
+        - id: user-service # 路由标示，必须唯一
+          uri: lb://userservice # 路由的目标地址
+          predicates: # 路由断言，判断请求是否符合规则
+            - Path=/user/**,/role/** # 路径断言，判断路径是否是以/user开头，如果是则符合
+        - id: cs-service # 路由标示，必须唯一
+          uri: lb://csservice # 路由的目标地址
+          predicates: # 路由断言，判断请求是否符合规则
+            - Path=/customer/**,/linkman/**,/followUp/**,/customerTransfer/**,/customerLoss/**,/report/** # 路径断言，判断路径是否是以/user开头，如果是则符合
+        - id: sale-service # 路由标示，必须唯一
+          uri: lb://saleservice # 路由的目标地址
+          predicates: # 路由断言，判断请求是否符合规则
+            - Path=/product/**,/orders/**,/target/** # 路径断言，判断路径是否是以/user开头，如果是则符合

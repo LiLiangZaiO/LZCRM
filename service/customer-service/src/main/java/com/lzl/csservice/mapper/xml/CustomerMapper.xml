@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lzl.csservice.mapper.CustomerMapper">
+
+    <update id="updateCustomerId">
+        update customer set manager_id = #{userId} where id= #{customerId}
+    </update>
+
+
+    <select id="getCreaterIdByCustomerId" resultType="java.lang.String">
+        SELECT creater_id from customer WHERE id=#{customerId}
+    </select>
+    <select id="getCustomerNameById" resultType="java.lang.String">
+        SELECT name from customer WHERE id=#{customerId}
+    </select>
+
+
+    <update id="updateCustomerStatus">
+        update customer set status = #{status} where id= #{customerId}
+    </update>
+    <update id="updateCustomerMaturity">
+        update customer set maturity = #{maturity} where id= #{customerId}
+    </update>
+
+
+    <select id="getEnteringCustomerLossList" resultType="com.lzl.csservice.entity.Customer">
+        SELECT id
+        FROM customer
+        WHERE delete_status = 0 and manager_id = '0' and status = '意向客户'  AND DATE_ADD(customer.update_time,INTERVAL 10 DAY) &lt; NOW()
+    </select>
+
+    <update id="updateCustomerStatusByIds">
+        update
+        customer
+        set
+        status = '已流失客户'
+        where
+        id in
+        <foreach collection="customerIdList" item="id" open="(" close=")" separator=",">
+            #{id}
+        </foreach>
+    </update>
+
+
+    <!-- 统计客户经理对应月份的业绩 -->
+    <select id="countManagerCustomerRank" resultType="java.util.Map">
+    select u.real_name as user , IFNULL(sum(o.price),0) as count from user u left join orders o on u.id = o.manager_id
+    <if test="monthDate !=null">
+        and date_format(o.create_time,'%Y%m')=date_format(#{monthDate},'%Y%m')
+    </if>
+    <if test="monthDate ==null">
+        and date_format(o.create_time,'%Y%m')=date_format(CURDATE(),'%Y%m')
+    </if>
+        group by u.username
+        order by count desc
+        limit 10
+    </select>
+
+    <!-- 统计客户的来源 -->
+    <select id="countCustomerSource" resultType="java.util.Map">
+        select count(*) as count, c.source as source
+        from customer c
+        where c.delete_status=0
+        group by c.source
+    </select>
+
+    <!--    按 年份 来 查询 公司的当月的整体业绩-->
+    <select id="countCompanyPerformance" resultType="java.util.Map">
+        select
+            ifnull(b.num,0) as turnover,a.date
+        from
+            (
+                SELECT CONCAT(date_format(#{yearDate},'%Y'),'-01') AS date UNION
+                SELECT CONCAT(date_format(#{yearDate},'%Y'),'-02') AS date UNION
+                SELECT CONCAT(date_format(#{yearDate},'%Y'),'-03') AS date UNION
+                SELECT CONCAT(date_format(#{yearDate},'%Y'),'-04') AS date UNION
+                SELECT CONCAT(date_format(#{yearDate},'%Y'),'-05') AS date UNION
+                SELECT CONCAT(date_format(#{yearDate},'%Y'),'-06') AS date UNION
+                SELECT CONCAT(date_format(#{yearDate},'%Y'),'-07') AS date UNION
+                SELECT CONCAT(date_format(#{yearDate},'%Y'),'-08') AS date UNION
+                SELECT CONCAT(date_format(#{yearDate},'%Y'),'-09') AS date UNION
+                SELECT CONCAT(date_format(#{yearDate},'%Y'),'-10') AS date UNION
+                SELECT CONCAT(date_format(#{yearDate},'%Y'),'-11') AS date UNION
+                SELECT CONCAT(date_format(#{yearDate},'%Y'),'-12') AS date
+            )a
+                left join
+            (select sum(price)as num,date_format(create_time,'%Y-%m') as date from orders group by date) b
+            on a.date = b.date
+        order by date
+    </select>
+<!--    统计客户的组成类型-->
+    <select id="countCustomerType" resultType="java.util.Map">
+        select count(*) as count,type from customer WHERE delete_status=0 GROUP BY type
+    </select>
+
+
+    <update id="failedMyCustomer">
+        update
+            customer
+        set
+            status = '失败客户'
+        where
+            id = #{customerId}
+    </update>
+
+
+    <delete id="deleteCustomerById">
+        update
+            customer
+        set
+            delete_status = 1
+        where
+            id = #{customerId}
+    </delete>
+
+</mapper>
